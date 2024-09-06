@@ -2,21 +2,23 @@
 
 'use stict';
 
-const fetchData = async function (country, maxRetries) {
-  let res;
+const fetchData = async function (url, maxRetries) {
   let tries = 0;
-  try {
-    res = await fetch(`https://restcountries.com/v3.1/name/${country}`);
-    if (!res.ok) throw new Error('Not found');
-    const data = await res.json();
-    console.log(data[0].name.common);
-  } catch (err) {
-    while (tries < maxRetries) {
-      res = await fetch(`https://restcountries.com/v3.1/name/${country}`);
+  while (tries < maxRetries) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`Not found (${res.status})`);
+      const data = await res.json();
+      return data;
+    } catch (err) {
+      console.error(`Error : ${err.message}`);
       tries++;
     }
-    console.error(err);
   }
+
+  throw new Error(`Error in fatching data after ${tries} retries`);
 };
 
-fetchData('bharat', 3);
+fetchData('https://restcountries.com/v3.1/name/bharat', 3)
+  .then(data => console.log(data[0].name.common))
+  .catch(err => console.error(err.message));

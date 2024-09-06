@@ -3,22 +3,39 @@
 'use strict';
 
 const download = async function (urls) {
-  try {
-    const contents = await Promise.all(
-      urls.map(async url => {
-        const res = await fetch(url);
-        return await res.json();
-      })
-    );
+  const contents = await Promise.allSettled(
+    urls.map(async url => {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`Error in downloading data from ${url} (${res.status})`);
+      const data = await res.json();
+      return { url, data };
+    })
+  );
 
-    console.log(contents.map(data => data[0].name.common));
-  } catch (err) {
-    console.error(err);
-  }
+  return contents;
 };
 
-download([
+const urls = [
   'https://restcountries.com/v3.1/name/usa',
   'https://restcountries.com/v3.1/name/portugal',
   'https://restcountries.com/v3.1/name/bharat',
-]);
+];
+
+download(urls);
+
+(async function () {
+  try {
+    const contents = await download(urls);
+    console.log(
+      contents.map(content => {
+        if (content.status === 'fulfilled') {
+          return `Data from ${content.value.url} : ${content.value.data[0].capital[0]}`;
+        } else {
+          return content.reason.message;
+        }
+      })
+    );
+  } catch (err) {
+    console.error(`Error : ${err.message}`);
+  }
+})();

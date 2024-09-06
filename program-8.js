@@ -10,18 +10,20 @@ const timeout = function (sec) {
   });
 };
 
-const fetchData = function (promise, time) {
-  Promise.race([promise, timeout(time)])
-    .then(res => console.log(res[0].name))
-    .catch(err => console.error(err));
+const fetchData = async function (promise, time) {
+  try {
+    const response = await Promise.race([promise, timeout(time)]);
+    if (!response.ok) throw new Error(`Not found (${response.status})`);
+    const data = await response.json();
+    console.log(data[0].name.common);
+  } catch (err) {
+    console.error(err.message);
+  }
 };
 
-fetchData(
-  fetch('https://restcountries.com/v3.1/name/bharat').then(res => res.json()),
-  0.1
-);
+const promise = fetch('https://restcountries.com/v3.1/name/bharat');
 
-fetchData(
-  fetch('https://restcountries.com/v3.1/name/bharat').then(res => res.json()),
-  1
-);
+let time = 0.1;
+time = 2; // in second
+
+fetchData(promise, time);
